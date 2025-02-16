@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'Signin.dart';
+import 'BloggerDetailScreen.dart';
 
 class BlogManagementScreen extends StatefulWidget {
   @override
@@ -255,57 +256,50 @@ class _BlogManagementScreenState extends State<BlogManagementScreen> with Single
                     return Card(
                       elevation: 5,
                       margin: EdgeInsets.symmetric(vertical: 8),
-                      child: Padding(
-                        padding: EdgeInsets.all(10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            if (doc['blogImage'] != null)
-                              Image.network(
-                                doc['blogImage'],
-                                height: 150,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            SizedBox(height: 10),
-                            Text(
-                              doc['blogTitle'],
-                              style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BloggerDetailScreen(
+                                title: doc['blogTitle'],
+                                author: doc['blogAuthor'],
+                                content: doc['blogContent'],
+                                imageUrl: doc['blogImage'],
                               ),
                             ),
-                            SizedBox(height: 5),
-                            Text(
-                              "Tác giả: ${doc['blogAuthor']}",
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                            SizedBox(height: 10),
-                            Text(doc['blogContent']),
-                            SizedBox(height: 10),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                IconButton(
-                                  icon: Icon(Icons.edit, color: Colors.blue),
-                                  onPressed: () {
-                                    setState(() {
-                                      titleController.text = doc['blogTitle'];
-                                      authorController.text = doc['blogAuthor'];
-                                      contentController.text = doc['blogContent'];
-                                      isEditing = true;
-                                      editingDocId = doc.id;
-                                      _tabController.animateTo(0);
-                                    });
-                                  },
+                          );
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.all(10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (doc['blogImage'] != null)
+                                Image.network(
+                                  doc['blogImage'],
+                                  height: 150,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
                                 ),
-                                IconButton(
-                                  icon: Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () => deleteBlog(doc.id),
-                                ),
-                              ],
-                            )
-                          ],
+                              SizedBox(height: 10),
+                              Text(
+                                doc['blogTitle'],
+                                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 5),
+                              Text(
+                                "Tác giả: ${doc['blogAuthor']}",
+                                style: TextStyle(color: Colors.grey[600]),
+                              ),
+                              SizedBox(height: 10),
+                              Text(
+                                doc['blogContent'],
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );

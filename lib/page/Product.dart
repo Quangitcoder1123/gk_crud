@@ -4,7 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'Signin.dart';
+import 'ProductDetail.dart';
 class ProductManagementScreen extends StatefulWidget {
   @override
   _ProductManagementScreenState createState() => _ProductManagementScreenState();
@@ -37,8 +38,11 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
 
   void _signOut() async {
     await FirebaseAuth.instance.signOut();
-    Navigator.of(context).pushReplacementNamed('/login');
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => AuthPage()),
+    );
   }
+
 
   Future<void> _pickAndUploadImage() async {
     final XFile? pickedImage = await _picker.pickImage(source: ImageSource.gallery);
@@ -103,17 +107,17 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
     Map<String, dynamic> productData = {
       "productName": nameController.text,
       "productType": typeController.text,
-      "productPrice": double.parse(priceController.text),
-      "productImage": imageUrl, // Có thể là null nếu không có ảnh
+      "productPrice": int.parse(priceController.text),
+      "productImage": imageUrl,
     };
 
 
     if (isEditing && editingProductId != null) {
       await FirebaseFirestore.instance.collection("Products").doc(editingProductId).update(productData);
-      _showSuccessSnackBar('Product updated successfully');
+      _showSuccessSnackBar('Cập nhật sản phẩm thành công');
     } else {
       await FirebaseFirestore.instance.collection("Products").add(productData);
-      _showSuccessSnackBar('Product added successfully');
+      _showSuccessSnackBar('Thêm sản phẩm thành công');
     }
 
     _clearForm();
@@ -144,7 +148,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
 
   void _deleteProduct(String productId) async {
     await FirebaseFirestore.instance.collection("Products").doc(productId).delete();
-    _showSuccessSnackBar('Product deleted successfully');
+    _showdeletSnackBar('Xóa sản phẩm thành công');
   }
 
   void _showErrorSnackBar(String message) {
@@ -160,7 +164,12 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
       backgroundColor: Colors.green,
     ));
   }
-
+  void _showdeletSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+    ));
+  }
   bool _isNumeric(String str) {
     if (str == null) {
       return false;
@@ -233,68 +242,79 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> with 
   }
 
   Widget _buildProductCard(DocumentSnapshot product) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-            child: AspectRatio(
-              aspectRatio: 16 / 9,
-              child: product['productImage'] != null
-                  ? Image.network(
-                product['productImage'],
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(child: CircularProgressIndicator());
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return Icon(Icons.broken_image, size: 100, color: Colors.grey);
-                },
-              )
-                  : Container(
-                color: Colors.grey[200],
-                child: Icon(Icons.image, size: 100, color: Colors.grey),
+    return GestureDetector(
+      onTap: () {
+        // Chuyển sang trang ProductDetailScreen và truyền productId
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ProductDetailScreen(productId: product.id),
+          ),
+        );
+      },
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: product['productImage'] != null
+                    ? Image.network(
+                  product['productImage'],
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Center(child: CircularProgressIndicator());
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Icon(Icons.broken_image, size: 100, color: Colors.grey);
+                  },
+                )
+                    : Container(
+                  color: Colors.grey[200],
+                  child: Icon(Icons.image, size: 100, color: Colors.grey),
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(product['productName'],
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                SizedBox(height: 4),
-                Text('Loại: ${product['productType']}', style: TextStyle(color: Colors.grey[700])),
-                Text('Giá: ${product['productPrice']} VND', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
-              ],
+            Padding(
+              padding: EdgeInsets.all(8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(product['productName'],
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  SizedBox(height: 4),
+                  Text('Loại: ${product['productType']}', style: TextStyle(color: Colors.grey[700])),
+                  Text('Giá: ${product['productPrice']} VND', style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold)),
+                ],
+              ),
             ),
-          ),
-          Spacer(),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () => _editProduct(product),
-                ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteProduct(product.id),
-                ),
-              ],
+            Spacer(),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => _editProduct(product),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteProduct(product.id),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
